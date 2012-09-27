@@ -1,21 +1,23 @@
 module.exports = function (grunt) {
+    'use strict';
+
     grunt.initConfig({
         pkg: '<json:package.json>',
 
         meta: {
             banner:
                 '/**\n' +
-                ' * <%= pkg.title %> v<%= pkg.version %>\n' +
-                ' * <%= pkg.homepage %>\n' +
+                ' * <%= pkg.title || pkg.name %> v<%= pkg.version %>\n' +
+                ' * <%= pkg.homepage || pkg.repository.url %>\n' +
                 ' *\n' +
                 ' * Copyright © <%= grunt.template.today("yyyy") %> <%= pkg.author.name %>\n' +
-                ' * Released under the <%= pkg.license.type %> license.\n' +
+                ' * Released under the <%= _.pluck(pkg.licenses, "type").join(", ") %> <%= pkg.licenses.length > 1 ? "licenses" : "license" %>.\n' +
                 ' */'
         },
 
         concat: {
             dist: {
-                src: ['<banner:meta.banner>', 'src/**/*.js'],
+                src: ['<banner:meta.banner>', '<file_strip_banner:src/<%= pkg.name %>.js>'],
                 dest: 'dist/<%= pkg.name %>.js'
             }
         },
@@ -32,12 +34,12 @@ module.exports = function (grunt) {
         },
 
         lint: {
-            src: 'src/**/*.js', test: 'test/**/*.js'
+            files: ['grunt.js', 'src/**/*.js', 'test/**/*.js']
         },
 
         watch: {
-            files: ['<config:lint.src>', '<config:lint.test>'],
-            tasks: 'default'
+            files: '<config:lint.files>',
+            tasks: 'lint qunit'
         },
 
         jshint: {
@@ -52,20 +54,18 @@ module.exports = function (grunt) {
                 undef: true,
                 boss: true,
                 eqnull: true,
-                browser: true
+                browser: true,
+
+                jquery: true
             },
 
-            src: {
-                globals: {
-                    $: true, _: true, Backbone: true
-                }
-            },
-
-            test: {
-                globals: {
-                    $: true, _: true, Backbone: true,
-                    module: true, test: true, ok: true
-                }
+            globals: {
+                // Libraries
+                Backbone: true, _: true,
+                // QUnit
+                module: true,
+                test: true,
+                ok: true
             }
         },
 

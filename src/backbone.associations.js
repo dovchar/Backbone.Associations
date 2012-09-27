@@ -1,6 +1,41 @@
 (function () {
     'use strict';
 
+    Backbone.Associations = {};
+
+    /**
+     * Backbone.Associations.BelongsTo
+     */
+    var BelongsTo = Backbone.Associations.BelongsTo = function (storage) {
+
+    };
+
+    _.extend(BelongsTo.prototype, {
+
+    });
+
+    /**
+     * Backbone.Associations.HasMany
+     */
+    var HasMany = Backbone.Associations.HasMany = function (storage) {
+
+    };
+
+    _.extend(HasMany.prototype, {
+
+    });
+
+    /**
+     * Backbone.Associations.HasOne
+     */
+    var HasOne = Backbone.Associations.HasOne = function (storage) {
+
+    };
+
+    _.extend(HasOne.prototype, {
+
+    });
+
     /**
      * Backbone.Model
      */
@@ -21,63 +56,21 @@
 
             var attributes = toJSON.call(this, options);
 
-            if (options.associations) {
-                // Include associated data
-            }
+//            if (options.associations) {
+//
+//            }
 
             return attributes;
         })
     });
 
     /**
-     * Backbone.Collection
-     */
-    var Collection = Backbone.Collection;
-
-    _.extend(Collection.prototype, {
-
-    });
-
-    /**
-     * Backbone.BelongsTo
-     */
-    var BelongsTo = Backbone.BelongsTo = function (storage) {
-
-    };
-
-    _.extend(BelongsTo.prototype, {
-
-    });
-
-    /**
-     * Backbone.HasMany
-     */
-    var HasMany = Backbone.HasMany = function (storage) {
-
-    };
-
-    _.extend(HasMany.prototype, {
-
-    });
-
-    /**
-     * Backbone.HasOne
-     */
-    var HasOne = Backbone.HasOne = function (storage) {
-
-    };
-
-    _.extend(HasOne.prototype, {
-
-    });
-
-    /**
      * Backbone.sync
      */
-    Backbone.sync = _.wrap(Backbone.sync, function (sync, method, storage, options) {
+    Backbone.sync = _.wrap(Backbone.sync, function (sync, method, context, options) {
         // Check for current method
         if (method !== 'read') {
-            return sync.call(this, method, storage, options);
+            return sync.call(this, method, context, options);
         }
 
         // Ensure options
@@ -93,7 +86,7 @@
                 if (_.isFunction(complete)) {
                     complete.call(this, this, jqXHR, textStatus);
                 }
-            }, this),
+            }, context),
 
             success = _.bind(function (success, data, textStatus, jqXHR) {
                 // Resolve deferred call
@@ -103,7 +96,7 @@
                 if (_.isFunction(success)) {
                     success.call(this, this, data, options);
                 }
-            }, this),
+            }, context),
 
             error = _.bind(function (error, jqXHR, textStatus, errorThrown) {
                 // Reject deferred call
@@ -113,16 +106,16 @@
                 if (_.isFunction(error)) {
                     error.call(this, this, jqXHR, options);
                 }
-            }, this),
+            }, context),
 
             done = _.bind(function () {
                 // Prevent request duplication
                 if (_.isUndefined(this._xhrCache)) {
-                    this._xhrCache = sync.call(this, 'read', storage, options);
+                    this._xhrCache = sync.call(this, 'read', context, options);
                 } else {
                     this._xhrCache.then(deferred.resolve, deferred.reject);
                 }
-            }, this);
+            }, context);
 
         // Wrap custom callbacks
         _.extend(options, {
@@ -132,7 +125,6 @@
         });
 
         // Fetch associated collections
-        //    Middleware.Associations.fetch(deferreds, this);
 
         // Handle deferreds
         $.when.apply($, deferreds).then(done);

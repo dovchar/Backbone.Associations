@@ -2,27 +2,39 @@
     "name": "backbone.associations",
     "title": "Backbone.Associations",
     "version": "0.1.0",
+    "description": "Simple and powerful associations for Backbone.",
+    "keywords": ["backbone", "associations"],
+
     "homepage": "https://github.com/DreamTheater/Backbone.Associations",
+    "bugs": "https://github.com/DreamTheater/Backbone.Associations/issues",
 
     "author": {
-        "name": "Dmytro Nemoga"
-    },
-
-    "license": {
-        "type": "MIT",
-        "url": "https://github.com/DreamTheater/Backbone.Associations/blob/master/LICENSE"
+        "name": "Dmytro Nemoga",
+        "url": "https://github.com/DreamTheater"
     },
 
     "repository": {
         "type": "git",
-        "url": "git://github.com/DreamTheater/Backbone.Associations.git"
+        "url": "https://github.com/DreamTheater/Backbone.Associations.git"
     },
 
-    "bugs": {
-        "url": "https://github.com/DreamTheater/Backbone.Associations/issues"
+    "licenses": [{
+        "type": "MIT",
+        "url": "https://github.com/DreamTheater/Backbone.Associations/blob/master/LICENSE"
+    }],
+
+    "scripts": {
+        "test": "grunt lint qunit"
     },
 
     "devDependencies": {
-        "grunt": "*"
-    }
+        "grunt": "~0.3.15"
+    },
+
+    "engines": {
+        "node": "~0.8.10",
+        "npm": "~1.1.62"
+    },
+
+    "private": true
 }
