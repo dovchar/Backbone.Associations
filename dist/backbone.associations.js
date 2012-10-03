@@ -18,12 +18,8 @@
         // Ensure options
         options = _.extend({}, options);
 
-        // Initialize associations
-        if (_.isArray(options.associations)) {
-            this.associations = options.associations;
-        } else if (_.isUndefined(this.associations)) {
-            this.associations = [];
-        }
+        // Copy associations to the instance
+        this.associations = options.associations || this.associations || {};
 
         // Create reference to associated models
         _.each(this.associations, function (options) {
@@ -49,7 +45,7 @@
             belongsTo: function (options) {
                 return this._createReference({
                     getter: function (collection) {
-                        // Associated model ID
+                        // ID of associated model
                         var id = this.get(options.foreignKey);
 
                         return collection.get(id);
@@ -72,7 +68,12 @@
             hasOne: function (options) {
                 return this._createReference({
                     getter: function (collection) {
+                        var attributes = {};
 
+                        // Condition to model identification
+                        attributes[options.foreignKey] = this.id;
+
+                        return collection.where(attributes)[0];
                     },
 
                     setter: function (collection, model) {
@@ -113,7 +114,7 @@
             }),
 
             _createReference: function (reference, options) {
-                // Define getName() reference
+                // Create getName() reference
                 if (_.isFunction(reference.getter)) {
                     this['get' + options.name] = _.wrap(reference.getter, function (getter) {
                         // Associated collection
@@ -123,7 +124,7 @@
                     });
                 }
 
-                // Define setName(model) reference
+                // Create setName(model) reference
                 if (_.isFunction(reference.setter)) {
                     this['set' + options.name] = _.wrap(reference.setter, function (setter, model) {
                         // Associated collection
@@ -133,7 +134,7 @@
                     });
                 }
 
-                // Define buildName(attributes) reference
+                // Create buildName(attributes) reference
                 if (_.isFunction(reference.builder)) {
                     this['build' + options.name] = _.wrap(reference.builder, function (builder, attributes) {
                         // Associated collection
@@ -143,7 +144,7 @@
                     });
                 }
 
-                // Define createName(attributes) reference
+                // Create createName(attributes) reference
                 if (_.isFunction(reference.creator)) {
                     this['create' + options.name] = _.wrap(reference.creator, function (creator, attributes) {
                         // Associated collection

@@ -46,9 +46,25 @@
         model: Message, url: 'messages.json'
     });
 
-    window.users = new Users();
-    window.mailboxes = new Mailboxes();
-    window.messages = new Messages();
+    window.users = new Users([{
+        "id": 1
+    }, {
+        "id": 2
+    }]);
 
-    window.messages.fetch();
+    window.mailboxes = new Mailboxes([{
+        "id": 1,
+        "userId": 1
+    }, {
+        "id": 2,
+        "userId": 2
+    }]);
+
+    window.messages = new Messages([{
+        "id": 1,
+        "mailboxId": 1
+    }, {
+        "id": 2,
+        "mailboxId": 2
+    }]);
 }());

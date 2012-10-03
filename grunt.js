@@ -62,10 +62,18 @@ module.exports = function (grunt) {
             globals: {
                 // Libraries
                 Backbone: true, _: true,
-                // QUnit
+                // QUnit tests
                 module: true,
                 test: true,
-                ok: true
+                // QUnit asserts
+                ok: true,
+                equal: true,
+                notEqual: true,
+                strictEqual: true,
+                notStrictEqual: true,
+                deepEqual: true,
+                notDeepEqual: true,
+                throws: true
             }
         },
 
