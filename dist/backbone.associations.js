@@ -18,7 +18,7 @@
         // Ensure options
         options = _.extend({}, options);
 
-        // Copy associations to the instance
+        // Resolve associations
         this.associations = options.associations || this.associations || {};
 
         // Create reference to associated models
