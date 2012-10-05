@@ -18,22 +18,18 @@
         // Ensure options
         options = _.extend({}, options);
 
-        // Resolve associations
+        // Configure associations
         this.associations = options.associations || this.associations || {};
 
         // Create reference to associated models
         _.each(this.associations, function (options) {
-            var relations = _.pick(options, ['belongsTo', 'hasOne', 'hasMany']),
-                // Association type (first in the set)
-                type = _.keys(relations)[0],
-                // Associated collection
-                collection = relations[type];
+            var relation = this._resolveRelation(options);
 
             // Create reference methods
-            this[type]({
-                collection: collection,
-                // Configuration
-                name: options.as,
+            this[relation.type](options.as, {
+                // Related collection
+                collection: relation.collection,
+                // Additional configuration
                 foreignKey: options.by
             });
         }, this);
@@ -42,10 +38,9 @@
         Model.apply(this, arguments);
     }, Model, {
         prototype: _.extend(Model.prototype, {
-            belongsTo: function (options) {
-                return this._createReference({
+            belongsTo: function (name, options) {
+                return this._createReference(name, {
                     getter: function (collection) {
-                        // ID of associated model
                         var id = this.get(options.foreignKey);
 
                         return collection.get(id);
@@ -56,17 +51,19 @@
                     },
 
                     builder: function (collection, attributes) {
+                        var Model = collection.model;
 
+                        return new Model(attributes);
                     },
 
                     creator: function (collection, attributes) {
-
+                        return collection.create(attributes);
                     }
                 }, options);
             },
 
-            hasOne: function (options) {
-                return this._createReference({
+            hasOne: function (name, options) {
+                return this._createReference(name, {
                     getter: function (collection) {
                         var attributes = {};
 
@@ -81,17 +78,19 @@
                     },
 
                     builder: function (collection, attributes) {
+                        var Model = collection.model;
 
+                        return new Model(attributes);
                     },
 
                     creator: function (collection, attributes) {
-
+                        return collection.create(attributes);
                     }
                 }, options);
             },
 
-            hasMany: function (options) {
-                return this._createReference({
+            hasMany: function (name, options) {
+                return this._createReference(name, {
                     getter: function (collection) {
                         return collection;
                     }
@@ -113,45 +112,53 @@
                 return attributes;
             }),
 
-            _createReference: function (reference, options) {
-                // Create getName() reference
-                if (_.isFunction(reference.getter)) {
-                    this['get' + options.name] = _.wrap(reference.getter, function (getter) {
+            _createReference: function (name, reference, options) {
+                var getter = function (getter) {
                         // Associated collection
                         var collection = this._resolveCollection(options);
 
                         return getter.call(this, collection);
-                    });
-                }
+                    },
 
-                // Create setName(model) reference
-                if (_.isFunction(reference.setter)) {
-                    this['set' + options.name] = _.wrap(reference.setter, function (setter, model) {
+                    setter = function (setter, model) {
                         // Associated collection
                         var collection = this._resolveCollection(options);
 
                         return setter.call(this, collection, model);
-                    });
-                }
+                    },
 
-                // Create buildName(attributes) reference
-                if (_.isFunction(reference.builder)) {
-                    this['build' + options.name] = _.wrap(reference.builder, function (builder, attributes) {
+                    builder = function (builder, attributes) {
                         // Associated collection
                         var collection = this._resolveCollection(options);
 
                         return builder.call(this, collection, attributes);
-                    });
-                }
+                    },
 
-                // Create createName(attributes) reference
-                if (_.isFunction(reference.creator)) {
-                    this['create' + options.name] = _.wrap(reference.creator, function (creator, attributes) {
+                    creator = function (creator, attributes) {
                         // Associated collection
                         var collection = this._resolveCollection(options);
 
                         return creator.call(this, collection, attributes);
-                    });
+                    };
+
+                // Create getName() method
+                if (_.isFunction(reference.getter)) {
+                    this['get' + name] = _.wrap(reference.getter, getter);
+                }
+
+                // Create setName(model) method
+                if (_.isFunction(reference.setter)) {
+                    this['set' + name] = _.wrap(reference.setter, setter);
+                }
+
+                // Create buildName(attributes) method
+                if (_.isFunction(reference.builder)) {
+                    this['build' + name] = _.wrap(reference.builder, builder);
+                }
+
+                // Create createName(attributes) method
+                if (_.isFunction(reference.creator)) {
+                    this['create' + name] = _.wrap(reference.creator, creator);
                 }
 
                 return this;
@@ -159,6 +166,19 @@
 
             _resolveCollection: function (options) {
                 return _.result(options, 'collection');
+            },
+
+            _resolveRelation: function (options) {
+                var relations = _.pick(options, ['belongsTo', 'hasOne', 'hasMany']),
+                    // Relation type (first in the set)
+                    type = _.keys(relations)[0],
+                    // Related collection
+                    collection = relations[type];
+
+                return {
+                    type: type,
+                    collection: collection
+                };
             }
         })
     });
@@ -236,14 +256,10 @@
         // Fetch associated collections if needed
         if (_.isArray(associations)) {
             _.each(associations, function (options) {
-//                var relations = _.pick(options, ['belongsTo', 'hasOne', 'hasMany']),
-//                    // Association type (first in the set)
-//                    type = _.keys(relations)[0],
-//                    // Associated collection
-//                    collection = _.result(relations, type);
+//                var relation = Backbone.Model.prototype._resolveRelation.call(this, options);
 //
-//                deferreds.push(collection.fetch());
-            });
+//                deferreds.push(relation.collection.fetch());
+            }, this);
         }
 
         // Attach "done" callback
