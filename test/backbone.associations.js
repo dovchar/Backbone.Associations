@@ -14,6 +14,13 @@
 
     var Mailbox = Backbone.Model.extend({
         associations: [{
+            belongsTo: function () {
+                return window.users;
+            },
+
+            as: 'User',
+            by: 'userId'
+        }, {
             hasMany: function () {
                 return window.messages;
             },
@@ -46,25 +53,11 @@
         model: Message, url: 'messages.json'
     });
 
-    window.users = new Users([{
-        "id": 1
-    }, {
-        "id": 2
-    }]);
+    window.users = new Users();
+    window.mailboxes = new Mailboxes();
+    window.messages = new Messages();
 
-    window.mailboxes = new Mailboxes([{
-        "id": 1,
-        "userId": 1
-    }, {
-        "id": 2,
-        "userId": 2
-    }]);
-
-    window.messages = new Messages([{
-        "id": 1,
-        "mailboxId": 1
-    }, {
-        "id": 2,
-        "mailboxId": 2
-    }]);
+    window.users.fetch();
+    window.mailboxes.fetch();
+    window.messages.fetch();
 }());
