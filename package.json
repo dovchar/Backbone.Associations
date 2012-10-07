@@ -1,7 +1,7 @@
 {
     "name": "backbone.associations",
     "title": "Backbone.Associations",
-    "version": "0.2.0",
+    "version": "0.1.0",
     "description": "Simple and powerful associations for Backbone.",
     "keywords": ["backbone", "associations"],
 

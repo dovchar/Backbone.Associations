@@ -248,12 +248,12 @@
 
         // Load related data
         _.each(associations, function (association) {
-            // Relation object (configuration)
-            var relation = Backbone.Model.resolveRelation.call(this, association),
-                // Related collection
-                collection = Backbone.Model.resolveCollection.call(this, relation),
+            var deferred,
 
-                deferred;
+                // Relation object (configuration)
+                relation = Backbone.Model.resolveRelation(association),
+                // Related collection
+                collection = Backbone.Model.resolveCollection(relation);
 
             // Prevent circular dependency
             if (collection !== options.associate) {
