@@ -36,9 +36,9 @@
         resolveRelation: function (association) {
             // The pairs of "type: collection"
             var relations = _.pick(association, ['belongsTo', 'hasOne', 'hasMany']),
-            // Relation type (first in the set)
+                // Relation type (first in the set)
                 type = _.keys(relations)[0],
-            // Related collection
+                // Related collection
                 collection = relations[type];
 
             return {
