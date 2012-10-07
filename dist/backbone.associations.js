@@ -1,5 +1,5 @@
 /**
- * Backbone.Associations v0.1.0
+ * Backbone.Associations v0.2.0
  * https://github.com/DreamTheater/Backbone.Associations
  *
  * Copyright © 2012 Dmytro Nemoga
@@ -23,8 +23,8 @@
 
         // Create reference to associated models
         _.each(this.associations, function (association) {
-            // Relation configuration
-            var relation = this._resolveRelation(association);
+            // Relation object (configuration)
+            var relation = this.constructor.resolveRelation(association);
 
             // Create reference methods
             this[relation.type](relation.name, relation);
@@ -33,6 +33,30 @@
         // Call original constructor
         Model.apply(this, arguments);
     }, Model, {
+        resolveRelation: function (association) {
+            // The pairs of "type: collection"
+            var relations = _.pick(association, ['belongsTo', 'hasOne', 'hasMany']),
+            // Relation type (first in the set)
+                type = _.keys(relations)[0],
+            // Related collection
+                collection = relations[type];
+
+            return {
+                // Relation type: "belongsTo", "hasOne" or "hasMany"
+                type: type,
+                // The instance of related collection (or function to getting it)
+                collection: collection,
+                // The name of reference (will be prefixed by get/set/build/create)
+                name: association.as,
+                // The name of attribute that contains ID of associated model
+                foreignKey: association.by
+            };
+        },
+
+        resolveCollection: function (relation) {
+            return _.result(relation, 'collection');
+        },
+
         prototype: _.extend(Model.prototype, {
             belongsTo: function (name, relation) {
                 return this._createReference(name, relation, {
@@ -120,77 +144,53 @@
             _createReference: function (name, relation, reference) {
                 var getter = function (getter) {
                         // Associated collection
-                        var collection = this._resolveCollection(relation);
+                        var collection = this.constructor.resolveCollection(relation);
 
                         return getter.call(this, collection);
                     },
 
                     setter = function (setter, model, options) {
                         // Associated collection
-                        var collection = this._resolveCollection(relation);
+                        var collection = this.constructor.resolveCollection(relation);
 
                         return setter.call(this, collection, model, options);
                     },
 
                     builder = function (builder, attributes, options) {
                         // Associated collection
-                        var collection = this._resolveCollection(relation);
+                        var collection = this.constructor.resolveCollection(relation);
 
                         return builder.call(this, collection, attributes, options);
                     },
 
                     creator = function (creator, attributes, options) {
                         // Associated collection
-                        var collection = this._resolveCollection(relation);
+                        var collection = this.constructor.resolveCollection(relation);
 
                         return creator.call(this, collection, attributes, options);
                     };
 
-                // Create getName() method
+                // Create getAssociation() method
                 if (_.isFunction(reference.getter)) {
                     this['get' + name] = _.wrap(reference.getter, getter);
                 }
 
-                // Create setName(model, options) method
+                // Create setAssociation(model, options) method
                 if (_.isFunction(reference.setter)) {
                     this['set' + name] = _.wrap(reference.setter, setter);
                 }
 
-                // Create buildName(attributes, options) method
+                // Create buildAssociation(attributes, options) method
                 if (_.isFunction(reference.builder)) {
                     this['build' + name] = _.wrap(reference.builder, builder);
                 }
 
-                // Create createName(attributes, options) method
+                // Create createAssociation(attributes, options) method
                 if (_.isFunction(reference.creator)) {
                     this['create' + name] = _.wrap(reference.creator, creator);
                 }
 
                 return this;
-            },
-
-            _resolveRelation: function (association) {
-                // The pairs of "type: collection"
-                var relations = _.pick(association, ['belongsTo', 'hasOne', 'hasMany']),
-                    // Relation type (first in the set)
-                    type = _.keys(relations)[0],
-                    // Related collection
-                    collection = relations[type];
-
-                return {
-                    // Relation type: "belongsTo", "hasOne" or "hasMany"
-                    type: type,
-                    // Collection instance or function to getting it
-                    collection: collection,
-                    // The name of reference (will be prefixed by get/set/build/create)
-                    name: association.as,
-                    // The name of attribute that contains ID of associated model
-                    foreignKey: association.by
-                };
-            },
-
-            _resolveCollection: function (relation) {
-                return _.result(relation, 'collection');
             }
         })
     });
@@ -204,14 +204,9 @@
             return sync.call(this, method, context, options);
         }
 
-        // Ensure options
-        options = _.extend({}, options);
-
-        var deferred = $.Deferred(),
-
-            complete = _.bind(function (complete, jqXHR, textStatus) {
-                // Clear XHR cache
-                delete this._xhrCache;
+        var complete = _.bind(function (complete, jqXHR, textStatus) {
+                // Release the lock
+                delete this._locked;
 
                 // Run custom callback
                 if (_.isFunction(complete)) {
@@ -237,16 +232,6 @@
                 if (_.isFunction(error)) {
                     error.call(this, this, jqXHR, options);
                 }
-            }, context),
-
-            done = _.bind(function () {
-                // Prevent request duplication
-                if (_.isUndefined(this._xhrCache)) {
-                    // Call native "sync"
-                    this._xhrCache = sync.call(this, 'read', context, options);
-                } else {
-                    this._xhrCache.then(deferred.resolve, deferred.reject);
-                }
             }, context);
 
         // Wrap native callbacks
@@ -256,7 +241,11 @@
             error: _.wrap(options.error, error)
         });
 
-        var associations, deferreds = [];
+        var deferred = $.Deferred(), deferreds = [], associations,
+
+            done = _.bind(function () {
+                sync.call(this, 'read', context, options);
+            }, context);
 
         // Resolve associations
         if (this instanceof Backbone.Model) {
@@ -265,16 +254,12 @@
             associations = this.model.prototype.associations;
         }
 
-        if (!_.isArray(associations)) {
-            associations = [];
-        }
-
-        // Load associated data if needed
+        // Load related data
         _.each(associations, function (association) {
-            // Relation configuration
-            var relation = Backbone.Model.prototype._resolveRelation.call(this, association),
+            // Relation object (configuration)
+            var relation = Backbone.Model.resolveRelation.call(this, association),
                 // Related collection
-                collection = Backbone.Model.prototype._resolveCollection.call(this, relation),
+                collection = Backbone.Model.resolveCollection.call(this, relation),
 
                 deferred;
 
@@ -289,8 +274,14 @@
             }
         }, this);
 
-        // Attach "done" callback
-        $.when.apply($, deferreds).then(done);
+        // Avoid request duplication
+        if (!this._locked) {
+            // Attach "done" callback
+            $.when.apply($, deferreds).then(done);
+
+            // Prevent other requests
+            this._locked = true;
+        }
 
         return deferred.promise();
     });
